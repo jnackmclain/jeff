@@ -162,6 +162,7 @@ struct ExeModuleInfo<'a> {
 fn split(args: SplitArgs) -> Result<()> {
     info!("Loading {}", args.config);
     let config: ProjectConfig = {
+        // TODO: open the config.yml without making a VfsFile out of it, because we need to remove VFS from this codebase
         let mut config_file = open_file(&args.config, true)?;
         serde_yaml::from_reader(config_file.as_mut())?
     };
