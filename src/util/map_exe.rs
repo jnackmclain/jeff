@@ -61,6 +61,12 @@ pub struct ExeMapInfo {
     // pub section_units: HashMap<String, Vec<(u32, String)>>,
 }
 
+impl Default for ExeMapInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ExeMapInfo {
     pub fn new() -> Self {
         ExeMapInfo {
@@ -95,13 +101,13 @@ impl ExeMapInfo {
 
     fn add_symbol(&mut self, symbol_parts: Vec<&str>, is_static: bool) -> Result<()> {
         let idx_and_offset = symbol_parts[0].split(":").collect::<Vec<&str>>();
-        let sec_idx = u32::from_str_radix(&idx_and_offset[0], 16)?;
-        let sec_offset = u32::from_str_radix(&idx_and_offset[1], 16)?;
+        let sec_idx = u32::from_str_radix(idx_and_offset[0], 16)?;
+        let sec_offset = u32::from_str_radix(idx_and_offset[1], 16)?;
         let flags_slice = &symbol_parts[3..symbol_parts.len() - 1];
         let section_symbol_idx = self.get_section_idx(sec_idx, sec_offset)?;
 
         self.section_symbols.get_mut(section_symbol_idx).unwrap().push(ExeSymbolEntry {
-            addr: u32::from_str_radix(&symbol_parts[2], 16)?,
+            addr: u32::from_str_radix(symbol_parts[2], 16)?,
             symbol: String::from(symbol_parts[1]),
             unit: String::from(*symbol_parts.last().unwrap()),
             is_function: flags_slice.contains(&"f"),
@@ -133,7 +139,7 @@ impl ExeMapInfo {
                     }
                 }
             }
-            return None;
+            None
         }
 
         for entries in self.section_symbols.iter_mut() {
@@ -202,7 +208,7 @@ pub fn is_reg_intrinsic(name: &String) -> bool {
 
 pub fn apply_map_exe(result: ExeMapInfo, obj: &mut ObjInfo) -> Result<()> {
     // apply map symbols to ObjInfo
-    for (_idx, entries) in result.section_symbols.iter().enumerate() {
+    for entries in result.section_symbols.iter() {
         for sym in entries {
             // we want to skip imps and save/restore reg intrinsics, since we'll find those ourselves later
             if !sym.symbol.contains("__imp_")
@@ -488,7 +494,7 @@ pub fn process_map_exe(map_path: &Utf8NativePathBuf) -> Result<ExeMapInfo> {
         if line.contains(PREFERRED_LOAD_ADDR_STR) {
             let entry_str = line.split(PREFERRED_LOAD_ADDR_STR).collect::<Vec<&str>>();
             assert_eq!(entry_str.len(), 2);
-            exe_map_info.set_preferred_load_addr(u32::from_str_radix(&entry_str[1], 16)?);
+            exe_map_info.set_preferred_load_addr(u32::from_str_radix(entry_str[1], 16)?);
         } else if line == SECTION_STR {
             state = ExeMapState::ReadingSections;
             continue;
@@ -504,7 +510,7 @@ pub fn process_map_exe(map_path: &Utf8NativePathBuf) -> Result<ExeMapInfo> {
         match state {
             ExeMapState::None => continue,
             ExeMapState::ReadingSections => {
-                if line == "" {
+                if line.is_empty() {
                     state = ExeMapState::None;
                 } else {
                     let sec_parts = line.split_whitespace().collect::<Vec<&str>>();
@@ -514,9 +520,9 @@ pub fn process_map_exe(map_path: &Utf8NativePathBuf) -> Result<ExeMapInfo> {
                     let size_str = sec_parts[1].split("H").collect::<Vec<&str>>();
                     exe_map_info.add_section(ExeSectionInfo {
                         name: String::from(sec_parts[2]),
-                        index: u32::from_str_radix(&idx_and_offset[0], 16)?,
-                        offset: u32::from_str_radix(&idx_and_offset[1], 16)?,
-                        size: u32::from_str_radix(&size_str[0], 16)?,
+                        index: u32::from_str_radix(idx_and_offset[0], 16)?,
+                        offset: u32::from_str_radix(idx_and_offset[1], 16)?,
+                        size: u32::from_str_radix(size_str[0], 16)?,
                         section_type: match sec_parts[3] {
                             "CODE" => ExeSectionType::Code,
                             "DATA" => ExeSectionType::Data,
@@ -526,7 +532,7 @@ pub fn process_map_exe(map_path: &Utf8NativePathBuf) -> Result<ExeMapInfo> {
                 }
             }
             ExeMapState::ReadingSymbols => {
-                if line == "" {
+                if line.is_empty() {
                     if must_read_syms {
                         must_read_syms = false;
                         continue;
@@ -542,7 +548,7 @@ pub fn process_map_exe(map_path: &Utf8NativePathBuf) -> Result<ExeMapInfo> {
                 exe_map_info.add_symbol(symbol_parts, false)?;
             }
             ExeMapState::ReadingStaticSymbols => {
-                if line == "" {
+                if line.is_empty() {
                     if must_read_syms {
                         must_read_syms = false;
                         continue;

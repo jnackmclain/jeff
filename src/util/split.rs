@@ -201,9 +201,7 @@ fn validate_splits(obj: &ObjInfo) -> Result<()> {
 
         if let Some((_, symbol)) = obj
             .symbols
-            .for_section_range(section_index, ..addr)
-            .filter(|&(_, s)| s.size_known && s.size > 0 && !s.flags.is_stripped())
-            .next_back()
+            .for_section_range(section_index, ..addr).rfind(|&(_, s)| s.size_known && s.size > 0 && !s.flags.is_stripped())
         {
             ensure!(
                 addr >= symbol.address as u32 + symbol.size as u32,
@@ -220,9 +218,7 @@ fn validate_splits(obj: &ObjInfo) -> Result<()> {
 
         if let Some((_, symbol)) = obj
             .symbols
-            .for_section_range(section_index, ..split.end)
-            .filter(|&(_, s)| s.size_known && s.size > 0 && !s.flags.is_stripped())
-            .next_back()
+            .for_section_range(section_index, ..split.end).rfind(|&(_, s)| s.size_known && s.size > 0 && !s.flags.is_stripped())
         {
             ensure!(
                 split.end >= symbol.address as u32 + symbol.size as u32,
@@ -444,9 +440,7 @@ fn trim_split_alignment(obj: &mut ObjInfo) -> Result<()> {
         let mut split_end = split.end;
         if let Some((_, symbol)) = obj
             .symbols
-            .for_section_range(section_index, addr..split.end)
-            .filter(|&(_, s)| s.size_known && s.size > 0 && !s.flags.is_stripped())
-            .next_back()
+            .for_section_range(section_index, addr..split.end).rfind(|&(_, s)| s.size_known && s.size > 0 && !s.flags.is_stripped())
         {
             split_end = symbol.address as u32 + symbol.size as u32;
         }

@@ -438,9 +438,8 @@ fn split_write_obj_exe(
             // write the file
             let file = File::create(&full_path)?;
             let mut writer = BufWriter::new(file);
-            if !write_asm(&mut writer, &asm_obj)
-                .with_context(|| format!("Failed to write {full_path}"))
-                .is_ok()
+            if write_asm(&mut writer, asm_obj)
+                .with_context(|| format!("Failed to write {full_path}")).is_err()
             {
                 println!("Failed to write {full_path}!");
             }
@@ -629,7 +628,7 @@ fn disasm(args: DisasmArgs) -> Result<()> {
     // Gamepad Release
     apply_splits_file(&args.out, &mut obj)?;
     update_splits(&mut obj, None, false)?;
-    let split_objs = split_obj(&mut obj, None)?;
+    let split_objs = split_obj(&obj, None)?;
 
     for coff_obj in &split_objs {
         // skip autogenned splits for now
@@ -698,7 +697,7 @@ fn disasm(args: DisasmArgs) -> Result<()> {
                 },
                 weak: false, // sym.flags.scope() == ObjSymbolScope::Weak,
                 section: match sym.section {
-                    Some(idx) => SymbolSection::Section(sect_map.get(&idx).unwrap().clone()),
+                    Some(idx) => SymbolSection::Section(*sect_map.get(&idx).unwrap()),
                     None => SymbolSection::Undefined,
                 },
                 flags: SymbolFlags::None,
@@ -713,9 +712,9 @@ fn disasm(args: DisasmArgs) -> Result<()> {
                     Some(id) => id,
                     None => bail!("Could not find symbol ID for index {}", reloc.target_symbol),
                 };
-                cur_coff.add_relocation(sect_map.get(&sect_idx).unwrap().clone(), Relocation {
+                cur_coff.add_relocation(*sect_map.get(&sect_idx).unwrap(), Relocation {
                     offset: addr as u64,
-                    symbol: sym_id.clone(),
+                    symbol: *sym_id,
                     addend: 0,
                     flags: RelocationFlags::Coff { typ: reloc.to_coff() },
                 })?;
@@ -1013,7 +1012,7 @@ fn info(args: InfoArgs) -> Result<()> {
         if bff.compression == XexCompression::Compressed { "Compressed" } else { "Uncompressed" }
     );
     println!("  {}", if bff.encryption == XexEncryption::No { "Unencrypted" } else { "Encrypted" });
-    println!("");
+    println!();
 
     println!("Basefile Info:");
     println!("  Original PE Name: {}", xex.opt_header_data.original_name);
@@ -1026,7 +1025,7 @@ fn info(args: InfoArgs) -> Result<()> {
     let pst = FixedOffset::west_opt(8 * 3600).unwrap();
     let dt_pst = datetime.with_timezone(&pst);
     println!("{}", dt_pst.format("%a %b %d %H:%M:%S %Y"));
-    println!("");
+    println!();
 
     println!("Static Libraries:");
     let mut idx = 1;
@@ -1034,7 +1033,7 @@ fn info(args: InfoArgs) -> Result<()> {
         println!("  {}. {}: v{}.{}.{}.{}", idx, lib.name, lib.major, lib.minor, lib.build, lib.qfe);
         idx += 1;
     }
-    println!("");
+    println!();
 
     // TODO: import libraries
     list_exe_sections(&PeFile32::parse(&*xex.exe_bytes).expect("Failed to parse object file"));
