@@ -6,7 +6,7 @@
 https://youtu.be/0OzXZGA1k3s
 
 Forked from and inspired by [encounter's GC/Wii decomp toolkit](https://github.com/encounter/decomp-toolkit), jeff is 
-a decomp-toolkit meant for disassembling Xbox 360 executables (.xex files). It aims to assist potential Xbox 360 decompilation projects with
+a decomp-toolkit meant for disassembling Xbox 360 executables (xex files). It aims to assist potential Xbox 360 decompilation projects with
 the same benefits that encounter's toolkit provides, including function boundary analysis, relocation restorations, splits, and integration
 with other decompilation tools like [objdiff](https://github.com/encounter/objdiff) and
 [decomp.me](https://decomp.me).
