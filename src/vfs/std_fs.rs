@@ -47,16 +47,12 @@ pub struct StdFile {
 
 impl Clone for StdFile {
     #[inline]
-    fn clone(&self) -> Self {
-        Self { path: self.path.clone(), file: None, mmap: None }
-    }
+    fn clone(&self) -> Self { Self { path: self.path.clone(), file: None, mmap: None } }
 }
 
 impl StdFile {
     #[inline]
-    pub fn new(path: Utf8NativePathBuf) -> Self {
-        StdFile { path, file: None, mmap: None }
-    }
+    pub fn new(path: Utf8NativePathBuf) -> Self { StdFile { path, file: None, mmap: None } }
 
     pub fn file(&mut self) -> io::Result<&mut BufReader<fs::File>> {
         Ok(match self.file {
@@ -68,9 +64,7 @@ impl StdFile {
 
 impl BufRead for StdFile {
     #[inline]
-    fn fill_buf(&mut self) -> io::Result<&[u8]> {
-        self.file()?.fill_buf()
-    }
+    fn fill_buf(&mut self) -> io::Result<&[u8]> { self.file()?.fill_buf() }
 
     #[inline]
     fn consume(&mut self, amt: usize) {
@@ -82,16 +76,12 @@ impl BufRead for StdFile {
 
 impl Read for StdFile {
     #[inline]
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.file()?.read(buf)
-    }
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> { self.file()?.read(buf) }
 }
 
 impl Seek for StdFile {
     #[inline]
-    fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
-        self.file()?.seek(pos)
-    }
+    fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> { self.file()?.seek(pos) }
 }
 
 impl VfsFile for StdFile {
@@ -116,7 +106,5 @@ impl VfsFile for StdFile {
         })
     }
 
-    fn into_disc_stream(self: Box<Self>) -> Box<dyn DiscStream> {
-        self
-    }
+    fn into_disc_stream(self: Box<Self>) -> Box<dyn DiscStream> { self }
 }

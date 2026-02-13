@@ -110,19 +110,16 @@ fn check_prologue_sequence(
         ins.op == Opcode::Stw && ins.field_rs() == 0 && ins.field_ra() == 1
     }
     #[inline(always)]
-    fn is_bl(ins: Ins) -> bool {
-        ins.op == Opcode::B && ins.field_lk()
-    }
+    fn is_bl(ins: Ins) -> bool { ins.op == Opcode::B && ins.field_lk() }
     #[inline(always)]
     fn is_subi(ins: Ins) -> bool {
         ins.op == Opcode::Addi && ins.field_simm() < 0 && ins.field_simm() != -0x8000
     }
-    check_sequence(
-        section,
-        addr,
-        ins,
-        &[(&is_mflr, &is_stw), (&is_mflr, &is_bl), (&is_subi, &is_mflr)],
-    )
+    check_sequence(section, addr, ins, &[
+        (&is_mflr, &is_stw),
+        (&is_mflr, &is_bl),
+        (&is_subi, &is_mflr),
+    ])
 }
 
 impl FunctionSlices {
@@ -599,9 +596,7 @@ impl FunctionSlices {
         Ok(true)
     }
 
-    pub fn can_finalize(&self) -> bool {
-        self.possible_blocks.is_empty()
-    }
+    pub fn can_finalize(&self) -> bool { self.possible_blocks.is_empty() }
 
     pub fn finalize(
         &mut self,

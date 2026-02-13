@@ -30,9 +30,7 @@ const ETI_INIT_INFO_SIZE: usize = 16; // eti_start, eti_end, code_start, code_si
 pub trait DolLike {
     fn sections(&self) -> &[DolSection];
 
-    fn symbols(&self) -> &[AlfSymbol] {
-        &[]
-    }
+    fn symbols(&self) -> &[AlfSymbol] { &[] }
 
     fn entry_point(&self) -> u32;
 
@@ -92,9 +90,7 @@ impl FromReader for DolFile {
     const STATIC_SIZE: usize = DolHeader::STATIC_SIZE;
 
     fn from_reader_args<R>(reader: &mut R, e: Endian, _args: Self::Args) -> io::Result<Self>
-    where
-        R: Read + Seek + ?Sized,
-    {
+    where R: Read + Seek + ?Sized {
         let header = DolHeader::from_reader(reader, e)?;
         let mut sections = Vec::with_capacity(header.text_sizes.len() + header.data_sizes.len());
         for (idx, &size) in header.text_sizes.iter().enumerate() {
@@ -154,9 +150,7 @@ impl FromReader for DolHeader {
     const STATIC_SIZE: usize = 0x100;
 
     fn from_reader_args<R>(reader: &mut R, e: Endian, _args: Self::Args) -> io::Result<Self>
-    where
-        R: Read + Seek + ?Sized,
-    {
+    where R: Read + Seek + ?Sized {
         let result = Self {
             text_offs: <_>::from_reader(reader, e)?,
             data_offs: <_>::from_reader(reader, e)?,
@@ -175,9 +169,7 @@ impl FromReader for DolHeader {
 
 impl ToWriter for DolHeader {
     fn to_writer<W>(&self, writer: &mut W, e: Endian) -> io::Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    where W: Write + ?Sized {
         self.text_offs.to_writer(writer, e)?;
         self.data_offs.to_writer(writer, e)?;
         self.text_addrs.to_writer(writer, e)?;
@@ -194,23 +186,15 @@ impl ToWriter for DolHeader {
         Ok(())
     }
 
-    fn write_size(&self) -> usize {
-        Self::STATIC_SIZE
-    }
+    fn write_size(&self) -> usize { Self::STATIC_SIZE }
 }
 
 impl DolLike for DolFile {
-    fn sections(&self) -> &[DolSection] {
-        &self.sections
-    }
+    fn sections(&self) -> &[DolSection] { &self.sections }
 
-    fn entry_point(&self) -> u32 {
-        self.header.entry_point
-    }
+    fn entry_point(&self) -> u32 { self.header.entry_point }
 
-    fn has_unified_bss(&self) -> bool {
-        true
-    }
+    fn has_unified_bss(&self) -> bool { true }
 }
 
 fn read_u32(buf: &[u8], dol: &dyn DolLike, addr: u32) -> Result<u32> {
@@ -887,9 +871,7 @@ fn validate_eti_init_info(
 }
 
 pub fn write_dol<W>(obj: &ObjInfo, out: &mut W) -> Result<()>
-where
-    W: Write + Seek + ?Sized,
-{
+where W: Write + Seek + ?Sized {
     let mut header = DolHeader { entry_point: obj.entry.unwrap() as u32, ..Default::default() };
     let mut offset = 0x100u32;
     out.seek(SeekFrom::Start(offset as u64))?;
@@ -949,17 +931,13 @@ where
 }
 
 #[inline]
-const fn align32(x: u32) -> u32 {
-    (x + 31) & !31
-}
+const fn align32(x: u32) -> u32 { (x + 31) & !31 }
 
 const ZERO_BUF: [u8; 32] = [0u8; 32];
 
 #[inline]
 fn write_aligned<T>(out: &mut T, bytes: &[u8], aligned_size: u32) -> std::io::Result<()>
-where
-    T: Write + ?Sized,
-{
+where T: Write + ?Sized {
     out.write_all(bytes)?;
     let padding = aligned_size - bytes.len() as u32;
     if padding > 0 {

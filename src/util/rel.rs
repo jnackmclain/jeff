@@ -99,9 +99,7 @@ impl FromReader for RelHeader {
     const STATIC_SIZE: usize = DYNAMIC_SIZE;
 
     fn from_reader_args<R>(reader: &mut R, e: Endian, _args: Self::Args) -> io::Result<Self>
-    where
-        R: Read + Seek + ?Sized,
-    {
+    where R: Read + Seek + ?Sized {
         let module_id = u32::from_reader(reader, e)?;
         let next = u32::from_reader(reader, e)?;
         if next != 0 {
@@ -162,9 +160,7 @@ impl FromReader for RelHeader {
 
 impl ToWriter for RelHeader {
     fn to_writer<W>(&self, writer: &mut W, e: Endian) -> io::Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    where W: Write + ?Sized {
         self.module_id.to_writer(writer, e)?;
         0u32.to_writer(writer, e)?; // next
         0u32.to_writer(writer, e)?; // prev
@@ -248,26 +244,20 @@ impl FromReader for RelImport {
     ]);
 
     fn from_reader_args<R>(reader: &mut R, e: Endian, _args: Self::Args) -> io::Result<Self>
-    where
-        R: Read + Seek + ?Sized,
-    {
+    where R: Read + Seek + ?Sized {
         Ok(Self { module_id: u32::from_reader(reader, e)?, offset: u32::from_reader(reader, e)? })
     }
 }
 
 impl ToWriter for RelImport {
     fn to_writer<W>(&self, writer: &mut W, e: Endian) -> io::Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    where W: Write + ?Sized {
         self.module_id.to_writer(writer, e)?;
         self.offset.to_writer(writer, e)?;
         Ok(())
     }
 
-    fn write_size(&self) -> usize {
-        Self::STATIC_SIZE
-    }
+    fn write_size(&self) -> usize { Self::STATIC_SIZE }
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -285,9 +275,7 @@ impl FromReader for RelSectionHeader {
     ]);
 
     fn from_reader_args<R>(reader: &mut R, e: Endian, _args: Self::Args) -> io::Result<Self>
-    where
-        R: Read + Seek + ?Sized,
-    {
+    where R: Read + Seek + ?Sized {
         Ok(Self {
             offset_and_flags: u32::from_reader(reader, e)?,
             size: u32::from_reader(reader, e)?,
@@ -297,17 +285,13 @@ impl FromReader for RelSectionHeader {
 
 impl ToWriter for RelSectionHeader {
     fn to_writer<W>(&self, writer: &mut W, e: Endian) -> io::Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    where W: Write + ?Sized {
         self.offset_and_flags.to_writer(writer, e)?;
         self.size.to_writer(writer, e)?;
         Ok(())
     }
 
-    fn write_size(&self) -> usize {
-        Self::STATIC_SIZE
-    }
+    fn write_size(&self) -> usize { Self::STATIC_SIZE }
 }
 
 impl RelSectionHeader {
@@ -315,17 +299,11 @@ impl RelSectionHeader {
         Self { offset_and_flags: offset | (exec as u32), size }
     }
 
-    pub fn offset(&self) -> u32 {
-        self.offset_and_flags & !1
-    }
+    pub fn offset(&self) -> u32 { self.offset_and_flags & !1 }
 
-    pub fn size(&self) -> u32 {
-        self.size
-    }
+    pub fn size(&self) -> u32 { self.size }
 
-    pub fn exec(&self) -> bool {
-        self.offset_and_flags & 1 != 0
-    }
+    pub fn exec(&self) -> bool { self.offset_and_flags & 1 != 0 }
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -347,9 +325,7 @@ impl FromReader for RelRelocRaw {
     ]);
 
     fn from_reader_args<R>(reader: &mut R, e: Endian, _args: Self::Args) -> io::Result<Self>
-    where
-        R: Read + Seek + ?Sized,
-    {
+    where R: Read + Seek + ?Sized {
         Ok(Self {
             offset: u16::from_reader(reader, e)?,
             kind: u8::from_reader(reader, e)?,
@@ -361,9 +337,7 @@ impl FromReader for RelRelocRaw {
 
 impl ToWriter for RelRelocRaw {
     fn to_writer<W>(&self, writer: &mut W, e: Endian) -> io::Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    where W: Write + ?Sized {
         self.offset.to_writer(writer, e)?;
         self.kind.to_writer(writer, e)?;
         self.section.to_writer(writer, e)?;
@@ -371,19 +345,18 @@ impl ToWriter for RelRelocRaw {
         Ok(())
     }
 
-    fn write_size(&self) -> usize {
-        Self::STATIC_SIZE
-    }
+    fn write_size(&self) -> usize { Self::STATIC_SIZE }
 }
 
 pub fn process_rel_header<R>(reader: &mut R) -> Result<RelHeader>
-where
-    R: Read + Seek + ?Sized,
-{
+where R: Read + Seek + ?Sized {
     RelHeader::from_reader(reader, Endian::Big).context("Failed to read REL header")
 }
 
-pub fn process_rel_sections<R>(reader: &mut R, header: &RelHeader) -> Result<Vec<RelSectionHeader>>
+pub fn process_rel_sections<R>(
+    reader: &mut R,
+    header: &RelHeader,
+) -> Result<Vec<RelSectionHeader>>
 where
     R: Read + Seek + ?Sized,
 {
@@ -398,9 +371,7 @@ where
 }
 
 pub fn process_rel<R>(reader: &mut R, name: &str) -> Result<(RelHeader, ObjInfo)>
-where
-    R: Read + Seek + ?Sized,
-{
+where R: Read + Seek + ?Sized {
     let header = process_rel_header(reader)?;
     let mut sections = Vec::with_capacity(header.num_sections as usize);
     let mut text_section = None;
@@ -583,9 +554,7 @@ where
 }
 
 pub fn print_relocations<R>(reader: &mut R, header: &RelHeader) -> Result<()>
-where
-    R: Read + Seek + ?Sized,
-{
+where R: Read + Seek + ?Sized {
     let imp_end = (header.imp_offset + header.imp_size) as u64;
     reader.seek(SeekFrom::Start(header.imp_offset as u64))?;
     while reader.stream_position()? < imp_end {

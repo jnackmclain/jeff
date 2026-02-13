@@ -30,9 +30,7 @@ impl DepFile {
     }
 
     pub fn write<W>(&self, w: &mut W) -> std::io::Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    where W: Write + ?Sized {
         write!(w, "{}:", self.name)?;
         for dep in self.dependencies.iter().unique() {
             write!(w, " \\\n  {}", dep.as_str().replace(' ', "\\ "))?;

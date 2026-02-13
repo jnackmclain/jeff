@@ -151,20 +151,14 @@ pub struct ConfigArgs {
 }
 
 #[inline]
-fn bool_true() -> bool {
-    true
-}
+fn bool_true() -> bool { true }
 
 #[inline]
-fn is_true(b: &bool) -> bool {
-    *b
-}
+fn is_true(b: &bool) -> bool { *b }
 
 #[inline]
 fn is_default<T>(t: &T) -> bool
-where
-    T: Default + PartialEq,
-{
+where T: Default + PartialEq {
     t == &T::default()
 }
 
@@ -173,16 +167,12 @@ mod unix_path_serde {
     use typed_path::Utf8UnixPathBuf;
 
     pub fn serialize<S>(path: &Utf8UnixPathBuf, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    where S: Serializer {
         s.serialize_str(path.as_str())
     }
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<Utf8UnixPathBuf, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
+    where D: Deserializer<'de> {
         String::deserialize(deserializer).map(Utf8UnixPathBuf::from)
     }
 }
@@ -192,9 +182,7 @@ mod unix_path_serde_option {
     use typed_path::Utf8UnixPathBuf;
 
     pub fn serialize<S>(path: &Option<Utf8UnixPathBuf>, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    where S: Serializer {
         if let Some(path) = path {
             s.serialize_str(path.as_str())
         } else {
@@ -203,9 +191,7 @@ mod unix_path_serde_option {
     }
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Utf8UnixPathBuf>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
+    where D: Deserializer<'de> {
         Ok(Option::<String>::deserialize(deserializer)?.map(Utf8UnixPathBuf::from))
     }
 }
@@ -376,18 +362,14 @@ pub struct AddRelocationConfig {
 }
 
 impl ModuleConfig {
-    pub fn file_name(&self) -> &str {
-        self.object.file_name().unwrap_or(self.object.as_str())
-    }
+    pub fn file_name(&self) -> &str { self.object.file_name().unwrap_or(self.object.as_str()) }
 
     pub fn file_prefix(&self) -> &str {
         let file_name = self.file_name();
         file_name.split_once('.').map(|(prefix, _)| prefix).unwrap_or(file_name)
     }
 
-    pub fn name(&self) -> &str {
-        self.name.as_deref().unwrap_or_else(|| self.file_prefix())
-    }
+    pub fn name(&self) -> &str { self.name.as_deref().unwrap_or_else(|| self.file_prefix()) }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -501,23 +483,20 @@ fn apply_selfile(obj: &mut ObjInfo, buf: &[u8]) -> Result<()> {
             .or_else(|| existing_symbols.iter().find(|(_, s)| s.kind == symbol_kind).cloned());
         if let Some((existing_symbol_idx, existing_symbol)) = existing_symbol {
             log::debug!("Mapping symbol {} to {}", symbol.name, existing_symbol.name);
-            obj.symbols.replace(
-                existing_symbol_idx,
-                ObjSymbol {
-                    name: symbol.name.clone(),
-                    demangled_name: symbol.demangled_name.clone(),
-                    address: address as u64,
-                    section,
-                    size: existing_symbol.size,
-                    size_known: existing_symbol.size_known,
-                    flags: ObjSymbolFlagSet(existing_symbol.flags.0 | ObjSymbolFlags::Exported),
-                    kind: existing_symbol.kind,
-                    align: existing_symbol.align,
-                    data_kind: existing_symbol.data_kind,
-                    name_hash: existing_symbol.name_hash,
-                    demangled_name_hash: existing_symbol.demangled_name_hash,
-                },
-            )?;
+            obj.symbols.replace(existing_symbol_idx, ObjSymbol {
+                name: symbol.name.clone(),
+                demangled_name: symbol.demangled_name.clone(),
+                address: address as u64,
+                section,
+                size: existing_symbol.size,
+                size_known: existing_symbol.size_known,
+                flags: ObjSymbolFlagSet(existing_symbol.flags.0 | ObjSymbolFlags::Exported),
+                kind: existing_symbol.kind,
+                align: existing_symbol.align,
+                data_kind: existing_symbol.data_kind,
+                name_hash: existing_symbol.name_hash,
+                demangled_name_hash: existing_symbol.demangled_name_hash,
+            })?;
         } else {
             log::debug!("Creating symbol {} at {:#010X}", symbol.name, address);
             obj.symbols.add(
@@ -2084,14 +2063,11 @@ fn config(args: ConfigArgs) -> Result<()> {
             "rel" => {
                 let header = process_rel_header(&mut entry)?;
                 entry.rewind()?;
-                modules.push((
-                    header.module_id,
-                    ModuleConfig {
-                        object: path.with_unix_encoding(),
-                        hash: Some(file_sha1_string(&mut entry)?),
-                        ..Default::default()
-                    },
-                ));
+                modules.push((header.module_id, ModuleConfig {
+                    object: path.with_unix_encoding(),
+                    hash: Some(file_sha1_string(&mut entry)?),
+                    ..Default::default()
+                }));
             }
             "sel" => {
                 config.selfile = Some(path.with_unix_encoding());
@@ -2165,10 +2141,12 @@ pub(crate) fn apply_add_relocations(
                 (symbol_index, &obj.symbols[symbol_index])
             }
         };
-        obj.sections[section].relocations.replace(
-            address,
-            ObjReloc { kind: reloc.kind, target_symbol, addend: reloc.addend, module: None },
-        );
+        obj.sections[section].relocations.replace(address, ObjReloc {
+            kind: reloc.kind,
+            target_symbol,
+            addend: reloc.addend,
+            module: None,
+        });
     }
     Ok(())
 }

@@ -646,16 +646,13 @@ fn disasm(args: DisasmArgs) -> Result<()> {
         // insert the sections
         for (idx, sect) in coff_obj.sections.iter() {
             println!("Section: {}", sect.name);
-            let sect_id = cur_coff.add_section(
-                Vec::new(),
-                sect.name.clone().into_bytes(),
-                match sect.kind {
+            let sect_id =
+                cur_coff.add_section(Vec::new(), sect.name.clone().into_bytes(), match sect.kind {
                     ObjSectionKind::Code => SectionKind::Text,
                     ObjSectionKind::Data => SectionKind::Data,
                     ObjSectionKind::ReadOnlyData => SectionKind::ReadOnlyData,
                     ObjSectionKind::Bss => SectionKind::UninitializedData,
-                },
-            );
+                });
             cur_coff.append_section_data(sect_id, &sect.data, sect.align);
             sect_map.insert(idx, sect_id);
         }
@@ -715,15 +712,12 @@ fn disasm(args: DisasmArgs) -> Result<()> {
                     Some(id) => id,
                     None => bail!("Could not find symbol ID for index {}", reloc.target_symbol),
                 };
-                cur_coff.add_relocation(
-                    sect_map.get(&sect_idx).unwrap().clone(),
-                    Relocation {
-                        offset: addr as u64,
-                        symbol: sym_id.clone(),
-                        addend: 0,
-                        flags: RelocationFlags::Coff { typ: reloc.to_coff() },
-                    },
-                )?;
+                cur_coff.add_relocation(sect_map.get(&sect_idx).unwrap().clone(), Relocation {
+                    offset: addr as u64,
+                    symbol: sym_id.clone(),
+                    addend: 0,
+                    flags: RelocationFlags::Coff { typ: reloc.to_coff() },
+                })?;
             }
         }
 

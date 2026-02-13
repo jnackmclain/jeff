@@ -58,9 +58,7 @@ impl ContentMetadata {
 const ALIGNMENT: usize = 0x40;
 
 #[inline(always)]
-pub fn align_up(value: u64, alignment: u64) -> u64 {
-    (value + alignment - 1) & !(alignment - 1)
-}
+pub fn align_up(value: u64, alignment: u64) -> u64 { (value + alignment - 1) & !(alignment - 1) }
 
 pub type HashBytes = [u8; 20];
 pub type KeyBytes = [u8; 16];
@@ -113,9 +111,7 @@ impl WadFile {
 }
 
 pub fn process_wad<R>(reader: &mut R) -> Result<WadFile>
-where
-    R: BufRead + Seek + ?Sized,
-{
+where R: BufRead + Seek + ?Sized {
     let header: WadHeader = read_from(reader)?;
     let mut offset = align_up(header.header_size.get() as u64, ALIGNMENT as u64);
 
@@ -174,9 +170,7 @@ where
 }
 
 pub fn verify_wad<R>(file: &WadFile, reader: &mut R) -> Result<()>
-where
-    R: Read + Seek + ?Sized,
-{
+where R: Read + Seek + ?Sized {
     for content in file.contents() {
         let content_index = content.content_index.get();
         println!(
