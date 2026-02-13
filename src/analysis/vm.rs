@@ -41,9 +41,9 @@ pub struct GprSource {
 }
 
 impl GprSource {
-    fn from_register(source: &Gpr, regnum: usize) -> Self {
-        Self { kind: GprSourceLocation::Register(regnum), version: source.version }
-    }
+    // fn from_register(source: &Gpr, regnum: usize) -> Self {
+    //     Self { kind: GprSourceLocation::Register(regnum), version: source.version }
+    // }
 
     // from stack
 

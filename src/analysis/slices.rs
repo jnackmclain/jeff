@@ -99,11 +99,11 @@ fn check_prologue_sequence(
         // mfspr r0, LR
         ins.op == Opcode::Mfspr && ins.field_rd() == 12 && ins.field_spr() == 8
     }
-    #[inline(always)]
-    fn is_stwu(ins: Ins) -> bool {
-        // stwu r1, d(r1)
-        ins.op == Opcode::Stwu && ins.field_rs() == 1 && ins.field_ra() == 1
-    }
+    // #[inline(always)]
+    // fn is_stwu(ins: Ins) -> bool {
+    //     // stwu r1, d(r1)
+    //     ins.op == Opcode::Stwu && ins.field_rs() == 1 && ins.field_ra() == 1
+    // }
     #[inline(always)]
     fn is_stw(ins: Ins) -> bool {
         // stw r0, d(r1)
@@ -152,88 +152,88 @@ impl FunctionSlices {
         }
     }
 
-    fn check_prologue(
-        &mut self,
-        section: &ObjSection,
-        addr: SectionAddress,
-        ins: Ins,
-    ) -> Result<()> {
-        #[inline(always)]
-        fn is_lwz(ins: Ins) -> bool {
-            // lwz r1, d(r)
-            ins.op == Opcode::Lwz && ins.field_rd() == 1
-        }
+    // fn check_prologue(
+    //     &mut self,
+    //     section: &ObjSection,
+    //     addr: SectionAddress,
+    //     ins: Ins,
+    // ) -> Result<()> {
+    //     #[inline(always)]
+    //     fn is_lwz(ins: Ins) -> bool {
+    //         // lwz r1, d(r)
+    //         ins.op == Opcode::Lwz && ins.field_rd() == 1
+    //     }
+    //
+    //     if is_lwz(ins) {
+    //         self.has_r1_load = true;
+    //         return Ok(()); // Possibly instead of a prologue
+    //     }
+    //     if check_prologue_sequence(section, addr, Some(ins))? {
+    //         if let Some(prologue) = self.prologue {
+    //             let invalid_seq = if prologue == addr {
+    //                 false
+    //             } else if prologue > addr {
+    //                 true
+    //             } else {
+    //                 // Check if any instructions between the prologue and this address
+    //                 // are branches or use r0 or r1.
+    //                 let mut current_addr = prologue.address + 4;
+    //                 loop {
+    //                     if current_addr == addr.address {
+    //                         break false;
+    //                     }
+    //                     let next = disassemble(section, current_addr).with_context(|| {
+    //                         format!("Failed to disassemble {current_addr:#010X}")
+    //                     })?;
+    //                     if is_end_of_seq(&next) {
+    //                         break true;
+    //                     }
+    //                     current_addr += 4;
+    //                 }
+    //             };
+    //             if invalid_seq {
+    //                 bail!("Found multiple functions inside a symbol: {:#010X} and {:#010X}. Check symbols.txt?", prologue, addr)
+    //             }
+    //         } else {
+    //             self.prologue = Some(addr);
+    //         }
+    //     }
+    //     Ok(())
+    // }
 
-        if is_lwz(ins) {
-            self.has_r1_load = true;
-            return Ok(()); // Possibly instead of a prologue
-        }
-        if check_prologue_sequence(section, addr, Some(ins))? {
-            if let Some(prologue) = self.prologue {
-                let invalid_seq = if prologue == addr {
-                    false
-                } else if prologue > addr {
-                    true
-                } else {
-                    // Check if any instructions between the prologue and this address
-                    // are branches or use r0 or r1.
-                    let mut current_addr = prologue.address + 4;
-                    loop {
-                        if current_addr == addr.address {
-                            break false;
-                        }
-                        let next = disassemble(section, current_addr).with_context(|| {
-                            format!("Failed to disassemble {current_addr:#010X}")
-                        })?;
-                        if is_end_of_seq(&next) {
-                            break true;
-                        }
-                        current_addr += 4;
-                    }
-                };
-                if invalid_seq {
-                    bail!("Found multiple functions inside a symbol: {:#010X} and {:#010X}. Check symbols.txt?", prologue, addr)
-                }
-            } else {
-                self.prologue = Some(addr);
-            }
-        }
-        Ok(())
-    }
-
-    fn check_epilogue(
-        &mut self,
-        section: &ObjSection,
-        addr: SectionAddress,
-        ins: Ins,
-    ) -> Result<()> {
-        #[inline(always)]
-        fn is_mtlr(ins: Ins) -> bool {
-            // mtspr LR, r0
-            ins.op == Opcode::Mtspr && ins.field_rs() == 12 && ins.field_spr() == 8
-        }
-        #[inline(always)]
-        fn is_addi(ins: Ins) -> bool {
-            // addi r1, r1, SIMM
-            ins.op == Opcode::Addi && ins.field_rd() == 1 && ins.field_ra() == 1
-        }
-        #[inline(always)]
-        fn is_or(ins: Ins) -> bool {
-            // or r1, rA, rB
-            ins.op == Opcode::Or && ins.field_rd() == 1
-        }
-
-        if check_sequence(section, addr, Some(ins), &[(&is_mtlr, &is_addi), (&is_or, &is_mtlr)])? {
-            if let Some(epilogue) = self.epilogue {
-                if epilogue != addr {
-                    bail!("Found duplicate epilogue: {:#010X} and {:#010X}", epilogue, addr)
-                }
-            } else {
-                self.epilogue = Some(addr);
-            }
-        }
-        Ok(())
-    }
+    // fn check_epilogue(
+    //     &mut self,
+    //     section: &ObjSection,
+    //     addr: SectionAddress,
+    //     ins: Ins,
+    // ) -> Result<()> {
+    //     #[inline(always)]
+    //     fn is_mtlr(ins: Ins) -> bool {
+    //         // mtspr LR, r0
+    //         ins.op == Opcode::Mtspr && ins.field_rs() == 12 && ins.field_spr() == 8
+    //     }
+    //     #[inline(always)]
+    //     fn is_addi(ins: Ins) -> bool {
+    //         // addi r1, r1, SIMM
+    //         ins.op == Opcode::Addi && ins.field_rd() == 1 && ins.field_ra() == 1
+    //     }
+    //     #[inline(always)]
+    //     fn is_or(ins: Ins) -> bool {
+    //         // or r1, rA, rB
+    //         ins.op == Opcode::Or && ins.field_rd() == 1
+    //     }
+    //
+    //     if check_sequence(section, addr, Some(ins), &[(&is_mtlr, &is_addi), (&is_or, &is_mtlr)])? {
+    //         if let Some(epilogue) = self.epilogue {
+    //             if epilogue != addr {
+    //                 bail!("Found duplicate epilogue: {:#010X} and {:#010X}", epilogue, addr)
+    //             }
+    //         } else {
+    //             self.epilogue = Some(addr);
+    //         }
+    //     }
+    //     Ok(())
+    // }
 
     fn is_known_function(
         &self,
