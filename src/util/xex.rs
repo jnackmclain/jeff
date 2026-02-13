@@ -2,13 +2,11 @@ use std::{
     borrow::Cow,
     cmp::min,
     collections::{btree_map::Entry, BTreeMap},
-    ffi::CString,
     fs,
     num::NonZeroU64,
 };
 
 use anyhow::{anyhow, bail, ensure, Result};
-use byteorder::{BigEndian, ReadBytesExt};
 use lzxd::Lzxd;
 use memchr::memmem;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
@@ -16,19 +14,17 @@ use object::{
     endian,
     read::pe::PeFile32,
     write::{SectionId, SymbolId},
-    Architecture, BinaryFormat, Endianness, File, Import, Object, ObjectComdat, ObjectKind,
-    ObjectSection, ObjectSegment, ObjectSymbol, Relocation, RelocationFlags, RelocationTarget,
-    SectionKind, Symbol, SymbolFlags, SymbolKind, SymbolScope, SymbolSection,
+    Architecture, BinaryFormat, Endianness, Object, ObjectSection, RelocationFlags, SectionKind,
+    SymbolFlags, SymbolKind, SymbolScope,
 };
 use typed_path::{Utf8NativePathBuf, Utf8UnixPath};
 
 use crate::{
     analysis::{cfa::SectionAddress, read_u32},
     obj::{
-        ObjArchitecture, ObjInfo, ObjKind, ObjReloc, ObjRelocKind, ObjSection, ObjSectionKind,
-        ObjSplit, ObjSymbol, ObjSymbolFlagSet, ObjSymbolFlags, ObjSymbolKind, ObjSymbolScope,
-        ObjUnit, SectionIndex as ObjSectionIndex, SectionIndex, SymbolIndex as ObjSymbolIndex,
-        SymbolIndex,
+        ObjArchitecture, ObjInfo, ObjKind, ObjRelocKind, ObjSection, ObjSectionKind, ObjSymbol,
+        ObjSymbolFlagSet, ObjSymbolFlags, ObjSymbolKind, ObjSymbolScope,
+        SectionIndex as ObjSectionIndex, SectionIndex, SymbolIndex,
     },
     util::{crypto::decrypt_aes128_cbc_no_padding, xex_imports::replace_ordinal},
 };
@@ -198,7 +194,7 @@ impl ResourceInfos {
             data.len() % 16 == 0,
             "Resource info has unexpected length! (expected a multiple of 16)"
         );
-        let num_resources = data.len() / 16;
+        let _num_resources = data.len() / 16;
         let mut info: Vec<ResourceInfo> = vec![];
         for (_, chunk) in data.chunks_exact(16).enumerate() {
             let title_id = String::from_utf8(chunk[0..8].to_vec())?;
@@ -594,8 +590,7 @@ impl XexInfo {
                         is_dev_kit = true;
                         exe_bytes = exe;
                     }
-                    Err(e) => {
-                        return Err(e); // here until case 2 is implemented
+                    Err(_) => {
                         bail!("Could not deduce exe type!");
                     }
                 }
@@ -659,21 +654,23 @@ impl XexInfo {
 
                 while current_block_size != 0 {
                     if pos_in + current_block_size > compressed.len() {
-                        bail!("LZX: block needs {} bytes at 0x{:X} but only {} remain", current_block_size, pos_in, compressed.len() - pos_in);
+                        bail!(
+                            "LZX: block needs {} bytes at 0x{:X} but only {} remain",
+                            current_block_size,
+                            pos_in,
+                            compressed.len() - pos_in
+                        );
                     }
                     let block = &compressed[pos_in..pos_in + current_block_size];
                     pos_in += current_block_size;
                     if block.len() < 24 {
                         bail!("LZX: block too small for header: {} bytes", block.len());
                     }
-                    let next_block_size = u32::from_be_bytes([
-                        block[0], block[1], block[2], block[3],
-                    ]) as usize;
+                    let next_block_size =
+                        u32::from_be_bytes([block[0], block[1], block[2], block[3]]) as usize;
                     let mut off = 24usize;
                     while off + 2 <= block.len() {
-                        let chunk_len = u16::from_be_bytes([
-                            block[off], block[off + 1],
-                        ]) as usize;
+                        let chunk_len = u16::from_be_bytes([block[off], block[off + 1]]) as usize;
                         off += 2;
 
                         if chunk_len == 0 {
@@ -681,21 +678,37 @@ impl XexInfo {
                         }
 
                         if off + chunk_len > block.len() {
-                            bail!("LZX: sub-chunk at offset {} wants {} bytes but only {} remain", off, chunk_len, block.len() - off);
+                            bail!(
+                                "LZX: sub-chunk at offset {} wants {} bytes but only {} remain",
+                                off,
+                                chunk_len,
+                                block.len() - off
+                            );
                         }
                         let chunk_data = &block[off..off + chunk_len];
                         off += chunk_len;
-                        let expected = min(window_size, pe_image.len().saturating_sub(pos_out), );
+                        let expected = min(window_size, pe_image.len().saturating_sub(pos_out));
                         if expected == 0 {
                             break;
                         }
-                        let decompressed = lzxd_state.decompress_next(chunk_data, expected).map_err(|e| anyhow::anyhow!(
-                            "LZX: decompress failed at pos_out=0x{:X} \
+                        let decompressed =
+                            lzxd_state.decompress_next(chunk_data, expected).map_err(|e| {
+                                anyhow::anyhow!(
+                                    "LZX: decompress failed at pos_out=0x{:X} \
                             (chunk_len={}, expected={}, block_off={}): {:?}",
-                            pos_out, chunk_len, expected, off - chunk_len, e))?;
+                                    pos_out,
+                                    chunk_len,
+                                    expected,
+                                    off - chunk_len,
+                                    e
+                                )
+                            })?;
 
                         if decompressed.is_empty() {
-                            bail!("LZX: decompression returned zero bytes at pos_out=0x{:X}", pos_out);
+                            bail!(
+                                "LZX: decompression returned zero bytes at pos_out=0x{:X}",
+                                pos_out
+                            );
                         }
 
                         let copy_len = min(decompressed.len(), pe_image.len() - pos_out);
@@ -708,12 +721,6 @@ impl XexInfo {
                 if pos_out == 0 {
                     bail!("LZX: produced zero output bytes");
                 }
-                //bail!("This xex is compressed using LZX, which is not currently supported.");
-                // this is actually pretty hard to implement, it involves use of the NormalCompression we retrieved earlier,
-                // plus the use of microsoft's LZX decompression algorithms
-                // here are some references if you try to attempt this
-                // https://github.com/zeroKilo/XEXLoaderWV/blob/master/XEXLoaderWV/src/main/java/xexloaderwv/XEXHeader.java#L356
-                // https://github.com/emoose/idaxex/blob/master/formats/xex.cpp#L819
             }
         }
 
@@ -1245,7 +1252,7 @@ pub fn process_xex(path: &Utf8NativePathBuf) -> Result<ObjInfo> {
 }
 
 pub fn write_coff(obj: &ObjInfo) -> Result<Vec<u8>> {
-    let root_name = obj.name.split('.').next().unwrap();
+    // let root_name = obj.name.split('.').next().unwrap();
     // println!("Writing {}.obj", root_name);
 
     // for each obj:
@@ -1257,13 +1264,16 @@ pub fn write_coff(obj: &ObjInfo) -> Result<Vec<u8>> {
     // insert the sections
     for (idx, sect) in obj.sections.iter() {
         // println!("Section: {}", sect.name);
-        let sect_id =
-            cur_coff.add_section(Vec::new(), sect.name.clone().into_bytes(), match sect.kind {
+        let sect_id = cur_coff.add_section(
+            Vec::new(),
+            sect.name.clone().into_bytes(),
+            match sect.kind {
                 ObjSectionKind::Code => SectionKind::Text,
                 ObjSectionKind::Data => SectionKind::Data,
                 ObjSectionKind::ReadOnlyData => SectionKind::ReadOnlyData,
                 ObjSectionKind::Bss => SectionKind::UninitializedData,
-            });
+            },
+        );
         if sect.kind != ObjSectionKind::Bss {
             cur_coff.append_section_data(sect_id, &sect.data, sect.align);
         }

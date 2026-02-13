@@ -4,8 +4,6 @@ use std::{
 };
 
 use anyhow::{bail, ensure, Context, Result};
-use object::Section;
-// use ppc750cl::{Ins, Opcode};
 use powerpc::{Ins, Opcode};
 
 use crate::{
@@ -14,7 +12,7 @@ use crate::{
         disassemble,
         executor::{ExecCbData, ExecCbResult, Executor},
         uniq_jump_table_entries,
-        vm::{section_address_for, BranchTarget, GprValue, JumpTableType, StepResult, VM},
+        vm::{section_address_for, BranchTarget, JumpTableType, StepResult, VM},
         RelocationTarget,
     },
     obj::{ObjInfo, ObjKind, ObjSection, ObjSymbolKind},
@@ -112,16 +110,19 @@ fn check_prologue_sequence(
         ins.op == Opcode::Stw && ins.field_rs() == 0 && ins.field_ra() == 1
     }
     #[inline(always)]
-    fn is_bl(ins: Ins) -> bool { ins.op == Opcode::B && ins.field_lk() }
+    fn is_bl(ins: Ins) -> bool {
+        ins.op == Opcode::B && ins.field_lk()
+    }
     #[inline(always)]
     fn is_subi(ins: Ins) -> bool {
         ins.op == Opcode::Addi && ins.field_simm() < 0 && ins.field_simm() != -0x8000
     }
-    check_sequence(section, addr, ins, &[
-        (&is_mflr, &is_stw),
-        (&is_mflr, &is_bl),
-        (&is_subi, &is_mflr),
-    ])
+    check_sequence(
+        section,
+        addr,
+        ins,
+        &[(&is_mflr, &is_stw), (&is_mflr, &is_bl), (&is_subi, &is_mflr)],
+    )
 }
 
 impl FunctionSlices {
@@ -287,7 +288,7 @@ impl FunctionSlices {
                 );
                 // if we know the function end from pdata, just end the block here and continue processing
                 return match function_end {
-                    Some(end) => {
+                    Some(_end) => {
                         self.blocks.insert(block_start, function_end);
                         Ok(ExecCbResult::EndBlock)
                     }
@@ -598,7 +599,9 @@ impl FunctionSlices {
         Ok(true)
     }
 
-    pub fn can_finalize(&self) -> bool { self.possible_blocks.is_empty() }
+    pub fn can_finalize(&self) -> bool {
+        self.possible_blocks.is_empty()
+    }
 
     pub fn finalize(
         &mut self,
