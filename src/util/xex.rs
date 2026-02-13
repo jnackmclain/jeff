@@ -528,10 +528,7 @@ impl XexSessionKeys {
         //     print!("{:02X} ", k);
         // }
         // print!("\n");
-        Ok(Self {
-            session_key_retail: retail_derived_key,
-            session_key_devkit: devkit_derived_key,
-        })
+        Ok(Self { session_key_retail: retail_derived_key, session_key_devkit: devkit_derived_key })
     }
 }
 
@@ -1306,9 +1303,7 @@ pub fn write_coff(obj: &ObjInfo) -> Result<Vec<u8>> {
             },
             weak: false, // sym.flags.scope() == ObjSymbolScope::Weak,
             section: match sym.section {
-                Some(idx) => {
-                    object::write::SymbolSection::Section(*sect_map.get(&idx).unwrap())
-                }
+                Some(idx) => object::write::SymbolSection::Section(*sect_map.get(&idx).unwrap()),
                 None => object::write::SymbolSection::Undefined,
             },
             flags: SymbolFlags::None,

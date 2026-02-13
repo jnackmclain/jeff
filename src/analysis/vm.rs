@@ -572,9 +572,10 @@ impl VM {
                             // check the src reg and the current src.version
                             // it MUST match src reg's current version in order to pull data from it
                             if self.gpr[r].version == src.version
-                                && self.gpr[r].value != GprValue::Unknown {
-                                    self.gpr[ins.field_rs() as usize].value = self.gpr[r].value;
-                                }
+                                && self.gpr[r].value != GprValue::Unknown
+                            {
+                                self.gpr[ins.field_rs() as usize].value = self.gpr[r].value;
+                            }
                         }
                     }
 

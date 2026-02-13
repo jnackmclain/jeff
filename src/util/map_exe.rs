@@ -62,9 +62,7 @@ pub struct ExeMapInfo {
 }
 
 impl Default for ExeMapInfo {
-    fn default() -> Self {
-        Self::new()
-    }
+    fn default() -> Self { Self::new() }
 }
 
 impl ExeMapInfo {

@@ -439,7 +439,8 @@ fn split_write_obj_exe(
             let file = File::create(&full_path)?;
             let mut writer = BufWriter::new(file);
             if write_asm(&mut writer, asm_obj)
-                .with_context(|| format!("Failed to write {full_path}")).is_err()
+                .with_context(|| format!("Failed to write {full_path}"))
+                .is_err()
             {
                 println!("Failed to write {full_path}!");
             }
